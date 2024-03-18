@@ -31,41 +31,52 @@ class Contact(db.Model):
 @app.route('/contact', methods=['POST'])
 def contact():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        message = request.form['message']
+        try:
+            name = request.form['name']
+            email = request.form['email']
+            message = request.form['message']
+            
+            # Create a new Contact object
+            new_contact = Contact(name=name, email=email, message=message)
+            
+            # Add the object to the database
+            db.session.add(new_contact)
+            db.session.commit()
+            
+            flash('Message sent successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error occurred while sending message. Please try again later.', 'error')
+            print(e)
         
-        # Create a new Contact object
-        new_contact = Contact(name=name, email=email, message=message)
-        
-        # Add the object to the database
-        db.session.add(new_contact)
-        db.session.commit()
-        
-        
-        # Fetch all contacts from the database
-        contacts = Contact.query.all()
-        
-        
-        return redirect(url_for('index', contacts=contacts))
+    return redirect(url_for('index'))
 
 @app.route('/delete_contact/<int:contact_id>', methods=['POST'])
 def delete_contact(contact_id):
-    contact = Contact.query.get_or_404(contact_id)
-    db.session.delete(contact)
-    db.session.commit()
-    flash('Contact deleted successfully!', 'success')
+    try:
+        contact = Contact.query.get_or_404(contact_id)
+        db.session.delete(contact)
+        db.session.commit()
+        flash('Contact deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error occurred while deleting contact. Please try again later.', 'error')
+        print(e)
     return redirect(url_for('contacts'))
 
 
 
 @app.route('/contacts')
 def contacts():
-    # Fetch all contacts from the database
-    contacts = Contact.query.all()
+    try:
+        # Fetch all contacts from the database
+        contacts = Contact.query.all()
+    except Exception as e:
+        flash('Error occurred while fetching contacts. Please try again later.', 'error')
+        print(e)
+        contacts = []
     
     return render_template('contacts.html', contacts=contacts)
-   
    
 #-------------------------------------------------------------------- login and signup ------------------------------------------------------------------
 @app.route('/admin_login', methods=['GET', 'POST'])
